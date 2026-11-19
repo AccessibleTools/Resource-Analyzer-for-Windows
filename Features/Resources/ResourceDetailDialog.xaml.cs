@@ -232,21 +232,6 @@ namespace ResourceAnalyzer.Views
             }
         }
 
-        /* obsolete
-        {
-            if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-                e.Handled = true;
-                CopyFullDetails();
-            }
-            else if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.None && btnFlushMemory.Visibility == Visibility.Visible && btnFlushMemory.IsEnabled)
-            {
-                e.Handled = true;
-                FlushMemory();
-            }
-        }
-
-        */
         private void BtnFlushMemory_Click(object sender, RoutedEventArgs e)
         {
             FlushMemory();

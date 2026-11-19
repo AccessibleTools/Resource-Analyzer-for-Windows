@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -105,6 +106,11 @@ namespace ResourceAnalyzer
                 else
                 {
                     cmbStartupTray.SelectedIndex = s.StartWithWindows ? 2 : 3;
+                }
+
+                if (PackageHelper.IsStorePackage())
+                {
+                    _ = SyncPackagedStartupStateAsync();
                 }
 
                 // Preferences Memory combo
@@ -240,30 +246,61 @@ namespace ResourceAnalyzer
             SaveSettingsFromUI(silent: true);
         }
 
-        private void CmbStartupTray_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void CmbStartupTray_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isUpdatingUI) return;
             if (cmbStartupTray.SelectedIndex < 0) return;
 
             var s = _settingsService.CurrentSettings;
-            switch (cmbStartupTray.SelectedIndex)
+            bool targetStartWithWindows = (cmbStartupTray.SelectedIndex == 0 || cmbStartupTray.SelectedIndex == 2);
+            bool targetMinimizeToTray = (cmbStartupTray.SelectedIndex == 0 || cmbStartupTray.SelectedIndex == 1);
+
+            s.MinimizeToTray = targetMinimizeToTray;
+
+            if (PackageHelper.IsStorePackage())
             {
-                case 0:
-                    s.MinimizeToTray = true;
-                    s.StartWithWindows = true;
-                    break;
-                case 1:
-                    s.MinimizeToTray = true;
+                var result = await PackageHelper.SetPackagedStartupTaskStateAsync(targetStartWithWindows);
+                if (result == PackageHelper.StartupTaskResult.DisabledByUser)
+                {
                     s.StartWithWindows = false;
-                    break;
-                case 2:
-                    s.MinimizeToTray = false;
-                    s.StartWithWindows = true;
-                    break;
-                case 3:
-                    s.MinimizeToTray = false;
+                    _isUpdatingUI = true;
+                    try
+                    {
+                        cmbStartupTray.SelectedIndex = s.MinimizeToTray ? 1 : 3;
+                    }
+                    finally
+                    {
+                        _isUpdatingUI = false;
+                    }
+
+                    _speechService.Speak("Startup was disabled in Windows Settings. Opening Windows Startup Apps settings.", interrupt: true);
+                    txtAnnouncement.Text = "Startup disabled in Windows Settings. Opening settings...";
+                    OpenWindowsStartupSettings();
+                }
+                else if (result == PackageHelper.StartupTaskResult.DisabledByPolicy)
+                {
                     s.StartWithWindows = false;
-                    break;
+                    _isUpdatingUI = true;
+                    try
+                    {
+                        cmbStartupTray.SelectedIndex = s.MinimizeToTray ? 1 : 3;
+                    }
+                    finally
+                    {
+                        _isUpdatingUI = false;
+                    }
+
+                    _speechService.Speak("Startup is disabled by Windows policy.", interrupt: true);
+                    txtAnnouncement.Text = "Startup is disabled by Windows policy.";
+                }
+                else
+                {
+                    s.StartWithWindows = targetStartWithWindows;
+                }
+            }
+            else
+            {
+                s.StartWithWindows = targetStartWithWindows;
             }
 
             SaveSettingsFromUI(silent: true);
@@ -452,25 +489,8 @@ namespace ResourceAnalyzer
             // Startup and Tray
             if (cmbStartupTray != null && cmbStartupTray.SelectedIndex >= 0)
             {
-                switch (cmbStartupTray.SelectedIndex)
-                {
-                    case 0:
-                        s.MinimizeToTray = true;
-                        s.StartWithWindows = true;
-                        break;
-                    case 1:
-                        s.MinimizeToTray = true;
-                        s.StartWithWindows = false;
-                        break;
-                    case 2:
-                        s.MinimizeToTray = false;
-                        s.StartWithWindows = true;
-                        break;
-                    case 3:
-                        s.MinimizeToTray = false;
-                        s.StartWithWindows = false;
-                        break;
-                }
+                s.MinimizeToTray = (cmbStartupTray.SelectedIndex == 0 || cmbStartupTray.SelectedIndex == 1);
+                s.StartWithWindows = (cmbStartupTray.SelectedIndex == 0 || cmbStartupTray.SelectedIndex == 2);
             }
 
             // Preferences Memory
@@ -571,6 +591,49 @@ namespace ResourceAnalyzer
         #endregion
 
         #region Windows Startup Apps Settings
+
+        public async Task SyncPackagedStartupStateAsync()
+        {
+            if (!PackageHelper.IsStorePackage()) return;
+
+            try
+            {
+                bool? isWindowsStartupEnabled = await PackageHelper.GetPackagedStartupTaskStateAsync();
+                if (isWindowsStartupEnabled.HasValue)
+                {
+                    var s = _settingsService.CurrentSettings;
+                    if (s.StartWithWindows != isWindowsStartupEnabled.Value)
+                    {
+                        s.StartWithWindows = isWindowsStartupEnabled.Value;
+                        _settingsService.Save();
+
+                        _isUpdatingUI = true;
+                        try
+                        {
+                            if (cmbStartupTray != null)
+                            {
+                                if (s.MinimizeToTray)
+                                {
+                                    cmbStartupTray.SelectedIndex = s.StartWithWindows ? 0 : 1;
+                                }
+                                else
+                                {
+                                    cmbStartupTray.SelectedIndex = s.StartWithWindows ? 2 : 3;
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            _isUpdatingUI = false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to sync packaged startup state: {ex.Message}");
+            }
+        }
 
         private void OpenWindowsStartupSettings()
         {
@@ -745,36 +808,6 @@ namespace ResourceAnalyzer
                 _updateService.OpenUrl("https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/blob/main/THIRD-PARTY-NOTICES.md");
                 _speechService.Speak("Opening Third-Party Notices and Licenses.", interrupt: true);
                 txtAnnouncement.Text = "Opening Third-Party Notices in browser.";
-            }
-
-            if (false) switch (0)
-            {
-                case 0:
-                    PerformCheckForUpdatesAsync();
-                    break;
-                case 1:
-                    ShowShortcutsDialog();
-                    break;
-                case 2:
-                    _updateService.OpenUrl("https://github.com/AccessibleTools/Resource-Analyzer-for-Windows");
-                    _speechService.Speak("Opening Resource Analyzer repository on GitHub.", interrupt: true);
-                    txtAnnouncement.Text = "Opening GitHub repository in browser.";
-                    break;
-                case 3:
-                    _updateService.OpenUrl("https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/issues/new/choose");
-                    _speechService.Speak("Opening GitHub issues to report bug.", interrupt: true);
-                    txtAnnouncement.Text = "Opening GitHub issues in browser.";
-                    break;
-                case 4:
-                    _updateService.OpenUrl("https://gist.github.com/AakanshNahadiya/4d4f4abe3878de9c43ff9d9b3b7c9ee3");
-                    _speechService.Speak("Opening Accessible Tools Privacy Policy.", interrupt: true);
-                    txtAnnouncement.Text = "Opening Privacy Policy in browser.";
-                    break;
-                case 5:
-                    _updateService.OpenUrl("https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/blob/main/THIRD-PARTY-NOTICES.md");
-                    _speechService.Speak("Opening Third-Party Notices and Licenses.", interrupt: true);
-                    txtAnnouncement.Text = "Opening Third-Party Notices in browser.";
-                    break;
             }
         }
 

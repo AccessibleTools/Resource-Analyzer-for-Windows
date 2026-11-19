@@ -162,7 +162,8 @@ namespace ResourceAnalyzer
                     false);
             }
 
-            bool startMinimized = e.Args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
+            bool startMinimized = e.Args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase))
+                || PackageHelper.IsStartupTaskActivated();
             mainWindow.InitializeApp(startMinimized);
         }
 

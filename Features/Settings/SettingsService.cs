@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Win32;
+using ResourceAnalyzer.Helpers;
 using ResourceAnalyzer.Models;
 
 namespace ResourceAnalyzer.Services
@@ -60,11 +61,12 @@ namespace ResourceAnalyzer.Services
             }
             catch { }
 
-            // Sync with Windows Settings > Apps > Startup if toggled externally
-            SyncWithWindowsStartupStatus();
-
-            // Ensure startup state is registered with Windows
-            ApplyAutoStart(CurrentSettings.StartWithWindows);
+            // Sync with Windows Settings > Apps > Startup if toggled externally (unpackaged only)
+            if (!PackageHelper.IsStorePackage())
+            {
+                SyncWithWindowsStartupStatus();
+                ApplyAutoStart(CurrentSettings.StartWithWindows);
+            }
         }
 
         private void SyncWithWindowsStartupStatus()
@@ -112,6 +114,12 @@ namespace ResourceAnalyzer.Services
 
         public void ApplyAutoStart(bool enable)
         {
+            if (PackageHelper.IsStorePackage())
+            {
+                _ = PackageHelper.SetPackagedStartupTaskStateAsync(enable);
+                return;
+            }
+
             try
             {
                 string? exePath = Environment.ProcessPath;

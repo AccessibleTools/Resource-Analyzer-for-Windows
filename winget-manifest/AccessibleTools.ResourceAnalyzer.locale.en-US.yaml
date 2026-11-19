@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.28.0.schema.json
 PackageIdentifier: AccessibleTools.ResourceAnalyzer
 PackageVersion: 2.0.0
 PackageLocale: en-US
@@ -19,4 +19,4 @@ Tags:
   - system-monitor
 ReleaseNotesUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/releases/tag/v2.0.0
 ManifestType: defaultLocale
-ManifestVersion: 1.9.0
+ManifestVersion: 1.28.0

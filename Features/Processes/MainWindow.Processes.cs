@@ -446,15 +446,6 @@ namespace ResourceAnalyzer
             }
         }
 
-        /*
-                foreach (var k in stale)
-                {
-                    _consecutiveCpuAlertHits.Remove(k);
-                }
-            }
-        }
-
-        */
         private async Task TryEndSelectedProcessAsync()
         {
             if (lstProcesses.SelectedItem is not ProcessItem item)
@@ -855,38 +846,22 @@ namespace ResourceAnalyzer
         {
             string charStr = letter.ToString();
 
-            // 1. Direct name and description prefix matches
-            if (item.Name.StartsWith(charStr, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrWhiteSpace(item.Description) && item.Description.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrWhiteSpace(item.DisplayName) && item.DisplayName.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase)) return true;
-            if (item.IsGroupChild && !string.IsNullOrWhiteSpace(item.SubProcessDetail) && item.SubProcessDetail.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase)) return true;
-
-            // 2. Word boundary matches in DisplayName (e.g. 'E' for "Microsoft Edge", 'C' for "Google Chrome")
-            string full = item.DisplayName;
-            if (!string.IsNullOrWhiteSpace(full))
+            // 1. If child item has sub-process detail (e.g. Windows service name or browser tab), match its first letter
+            if (item.IsGroupChild && !string.IsNullOrWhiteSpace(item.SubProcessDetail))
             {
-                // Strip trademark symbols so (R), (TM), (C) do not trigger false letter matches
-                string cleaned = full.Replace("(R)", " ", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("(TM)", " ", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("(C)", " ", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("®", " ")
-                                     .Replace("™", " ")
-                                     .Replace("©", " ");
+                return item.SubProcessDetail.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase);
+            }
 
-                var parts = cleaned.Split(new[] { ' ', '(', ')', '[', ']', '-', '/', '\\', '_' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var part in parts)
-                {
-                    if (string.Equals(part, "R", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(part, "TM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
+            // 2. Visible process text starts with DisplayName (which displays Description if present, or Name if not)
+            if (!string.IsNullOrWhiteSpace(item.DisplayName))
+            {
+                return item.DisplayName.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase);
+            }
 
-                    if (part.StartsWith(charStr, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
+            // 3. Fallback to process name
+            if (!string.IsNullOrWhiteSpace(item.Name))
+            {
+                return item.Name.TrimStart().StartsWith(charStr, StringComparison.OrdinalIgnoreCase);
             }
 
             return false;

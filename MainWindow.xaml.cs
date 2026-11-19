@@ -84,6 +84,8 @@ namespace ResourceAnalyzer
             lstNetworkPorts.ItemsSource = _networkPortItems;
         }
 
+        public AppSettings CurrentSettings => _settingsService.CurrentSettings;
+
         private bool _isInitialized = false;
 
         public async void InitializeApp(bool startMinimized, int initialTabIndex = -1)
@@ -99,6 +101,13 @@ namespace ResourceAnalyzer
             NativeTrayIcon.EnsureHiddenInNotificationArea();
             InitHotkey(hwnd);
             Microsoft.Win32.SystemEvents.TimeChanged += OnSystemTimeChanged;
+            Activated += (s, e) =>
+            {
+                if (PackageHelper.IsStorePackage() && tabSettings != null && tabSettings.IsSelected)
+                {
+                    _ = SyncPackagedStartupStateAsync();
+                }
+            };
 
             _themeService.ApplyTheme(_settingsService.CurrentSettings.Theme);
             LoadSettingsIntoUI();
@@ -186,7 +195,7 @@ namespace ResourceAnalyzer
             if (!_isInitialized)
             {
                 string[] args = Environment.GetCommandLineArgs();
-                bool startMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
+                bool startMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase)) || PackageHelper.IsStartupTaskActivated();
 
                 int targetTabIndex = -1;
                 for (int i = 0; i < args.Length; i++)
@@ -202,7 +211,7 @@ namespace ResourceAnalyzer
             else
             {
                 string[] args = Environment.GetCommandLineArgs();
-                bool startMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
+                bool startMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase)) || PackageHelper.IsStartupTaskActivated();
                 if (!startMinimized)
                 {
                     FocusCurrentTabContent();

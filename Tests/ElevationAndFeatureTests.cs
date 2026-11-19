@@ -313,14 +313,50 @@ namespace ResourceAnalyzer.Tests
             // 'R' should NOT match the (R) registered trademark notation!
             Assert.False(MainWindow.ProcessMatchesLetter(item, 'R'));
 
-            // 'A' should match "Aggregator"
-            Assert.True(MainWindow.ProcessMatchesLetter(item, 'A'));
-
-            // 'M' should match "Microsoft"
+            // 'M' should match visible first letter "Microsoft"
             Assert.True(MainWindow.ProcessMatchesLetter(item, 'M'));
 
-            // 'H' should match "Host"
-            Assert.True(MainWindow.ProcessMatchesLetter(item, 'H'));
+            // 'A' and 'H' should NOT match since visible name starts with 'M'
+            Assert.False(MainWindow.ProcessMatchesLetter(item, 'A'));
+            Assert.False(MainWindow.ProcessMatchesLetter(item, 'H'));
+        }
+
+        [Fact]
+        public void ProcessMatchesLetter_MatchesVisibleDisplayNameFirst()
+        {
+            var audioItem = new ProcessItem
+            {
+                Pid = 5678,
+                Name = "audiodg.exe",
+                Description = "Windows Audio Device Graph Isolation"
+            };
+
+            // 'W' matches because description starts with "Windows Audio..."
+            Assert.True(MainWindow.ProcessMatchesLetter(audioItem, 'W'));
+
+            // 'A' should NOT match because visible display starts with 'W', not 'A'
+            Assert.False(MainWindow.ProcessMatchesLetter(audioItem, 'A'));
+
+            // Process without description matches its executable name
+            var cmdItem = new ProcessItem
+            {
+                Pid = 9999,
+                Name = "cmd.exe",
+                Description = ""
+            };
+            Assert.True(MainWindow.ProcessMatchesLetter(cmdItem, 'C'));
+
+            // Group child with sub-process detail matches sub-process detail
+            var childItem = new ProcessItem
+            {
+                Pid = 1111,
+                Name = "svchost.exe",
+                Description = "Host Process for Windows Services",
+                IsGroupChild = true,
+                SubProcessDetail = "AudioEndpointBuilder"
+            };
+            Assert.True(MainWindow.ProcessMatchesLetter(childItem, 'A'));
+            Assert.False(MainWindow.ProcessMatchesLetter(childItem, 'H'));
         }
 
         [Fact]
