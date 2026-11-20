@@ -18,8 +18,6 @@ winget install AccessibleTools.ResourceAnalyzer
 
 Run `ResourceAnalyzer_Setup_v2.0.0.exe`. Press `Tab` to choose options (desktop shortcut, start with Windows, check or uncheck for daily update, Review privacy policy), then press Install and Finish.
 
-Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
-
 ## How to use it
 
 Switch tabs with `Ctrl + 1` to `Ctrl + 5`. Press `F1` at any time to hear all keyboard shortcuts, and `F5` to refresh.
