@@ -9,9 +9,16 @@ It is tested with NVDA. JAWS and Windows Narrator should behave the same.
 
 Windows 10 or Windows 11 (64-bit). No separate .NET install is needed. It installs to your user profile without Administrator rights, and you can restart it as Administrator any time with `Ctrl + Shift + A`.
 
-## Install
+## Download and Install
+
+Download the latest installer from [GitHub Releases](https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/releases) or install via WinGet:
+```cmd
+winget install AccessibleTools.ResourceAnalyzer
+```
 
 Run `ResourceAnalyzer_Setup_v2.0.0.exe`. Press `Tab` to choose options (desktop shortcut, start with Windows, check or uncheck for daily update, Review privacy policy), then press Install and Finish.
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
 
 ## How to use it
 
