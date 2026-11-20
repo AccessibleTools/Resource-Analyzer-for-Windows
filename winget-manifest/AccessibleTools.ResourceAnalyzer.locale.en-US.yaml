@@ -5,6 +5,7 @@ PackageLocale: en-US
 Publisher: Accessible Tools
 PublisherUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows
 PublisherSupportUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/issues
+PrivacyUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/blob/main/PRIVACY.md
 PackageName: Resource Analyzer for Windows
 PackageUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows
 License: Freeware

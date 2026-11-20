@@ -58,7 +58,7 @@ namespace ResourceAnalyzer.Services
 
         public UpdateService(HttpClient? httpClient = null)
         {
-            _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            _httpClient = httpClient ?? new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
                 _httpClient.DefaultRequestHeaders.Add("User-Agent", "ResourceAnalyzer-UpdateChecker");
@@ -109,7 +109,8 @@ namespace ResourceAnalyzer.Services
 
             try
             {
-                using var response = await _httpClient.GetAsync(ApiUrl).ConfigureAwait(false);
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+                using var response = await _httpClient.GetAsync(ApiUrl, cts.Token).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     result.IsSuccess = false;
@@ -227,6 +228,12 @@ namespace ResourceAnalyzer.Services
 
                 return result;
             }
+            catch (OperationCanceledException)
+            {
+                result.IsSuccess = false;
+                result.Message = "Update check timed out. Please check your internet connection and try again.";
+                return result;
+            }
             catch (Exception ex)
             {
                 result.IsSuccess = false;
@@ -297,7 +304,11 @@ namespace ResourceAnalyzer.Services
 
                 tempFilePath = Path.Combine(tempDir, fileName);
 
-                using (var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
+                // Initial connection timeout (60s to establish server handshake and receive response headers)
+                using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                connectCts.CancelAfter(TimeSpan.FromSeconds(60));
+
+                using (var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, connectCts.Token).ConfigureAwait(false))
                 {
                     response.EnsureSuccessStatusCode();
 
