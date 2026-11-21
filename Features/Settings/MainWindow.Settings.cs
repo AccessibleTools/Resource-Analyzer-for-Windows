@@ -132,6 +132,16 @@ namespace ResourceAnalyzer
                     _currentSort = s.SortBy;
                 }
 
+                if (cmbSortBy != null)
+                {
+                    cmbSortBy.SelectedIndex = _currentSort switch
+                    {
+                        "CPU" => 1,
+                        "Name" => 2,
+                        _ => 0
+                    };
+                }
+
                 // Daily Update Check
                 if (chkAutoCheckUpdates != null)
                 {

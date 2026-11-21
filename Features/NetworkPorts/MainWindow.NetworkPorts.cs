@@ -150,18 +150,26 @@ namespace ResourceAnalyzer
             {
                 var filtered = FilterAndSortPorts(_rawNetworkPortList);
                 UpdateNetworkPortCollectionInPlace(filtered, isFullReset: true);
+                if (!string.IsNullOrWhiteSpace(txtPortSearch.Text) && _networkPortItems.Count > 0)
+                {
+                    lstNetworkPorts.SelectedIndex = 0;
+                    lstNetworkPorts.ScrollIntoView(_networkPortItems[0]);
+                }
             }
         }
 
         private void TxtPortSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down)
+            if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                lstNetworkPorts.Focus();
-                if (_networkPortItems.Count > 0 && lstNetworkPorts.SelectedIndex < 0)
+                if (_networkPortItems.Count > 0)
                 {
-                    lstNetworkPorts.SelectedIndex = 0;
+                    SelectAndFocusIndex(lstNetworkPorts, lstNetworkPorts.SelectedIndex >= 0 ? lstNetworkPorts.SelectedIndex : 0);
+                }
+                else
+                {
+                    lstNetworkPorts.Focus();
                 }
             }
             else if (e.Key == Key.Escape)
@@ -174,6 +182,11 @@ namespace ResourceAnalyzer
 
         private async void LstNetworkPorts_KeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleListCtrlHomeEnd(lstNetworkPorts, e, _networkPortItems.Count))
+            {
+                return;
+            }
+
             if (e.Key == Key.F5)
             {
                 e.Handled = true;

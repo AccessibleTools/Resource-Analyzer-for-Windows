@@ -794,7 +794,27 @@ namespace ResourceAnalyzer
             // Global in-app hotkeys
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                if (e.Key == Key.D1 || e.Key == Key.NumPad1)
+                if (e.Key == Key.Home)
+                {
+                    var targetList = GetActiveListBox();
+                    if (targetList != null && targetList.Items.Count > 0)
+                    {
+                        e.Handled = true;
+                        SelectAndFocusIndex(targetList, 0);
+                        return;
+                    }
+                }
+                else if (e.Key == Key.End)
+                {
+                    var targetList = GetActiveListBox();
+                    if (targetList != null && targetList.Items.Count > 0)
+                    {
+                        e.Handled = true;
+                        SelectAndFocusIndex(targetList, targetList.Items.Count - 1);
+                        return;
+                    }
+                }
+                else if (e.Key == Key.D1 || e.Key == Key.NumPad1)
                 {
                     e.Handled = true;
                     tabResources.IsSelected = true;
@@ -975,6 +995,93 @@ namespace ResourceAnalyzer
         }
 
 
+
+        private ListBox? GetActiveListBox()
+        {
+            if (Keyboard.FocusedElement is TextBox) return null;
+
+            if (tabProcesses.IsSelected)
+            {
+                if (lstFrozenApps.IsKeyboardFocusWithin) return lstFrozenApps;
+                return lstProcesses;
+            }
+            else if (tabDataUsage.IsSelected)
+            {
+                return lstDataUsage;
+            }
+            else if (tabNetworkPorts.IsSelected)
+            {
+                return lstNetworkPorts;
+            }
+            else if (tabResources.IsSelected)
+            {
+                return lstResources;
+            }
+
+            return null;
+        }
+
+        private bool HandleListCtrlHomeEnd(ListBox listBox, KeyEventArgs e, int itemCount)
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (e.Key == Key.Home)
+                {
+                    e.Handled = true;
+                    if (itemCount > 0)
+                    {
+                        SelectAndFocusIndex(listBox, 0);
+                    }
+                    return true;
+                }
+                else if (e.Key == Key.End)
+                {
+                    e.Handled = true;
+                    if (itemCount > 0)
+                    {
+                        SelectAndFocusIndex(listBox, itemCount - 1);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void SelectAndFocusIndex(ListBox listBox, int index)
+        {
+            if (listBox == null || index < 0 || index >= listBox.Items.Count) return;
+
+            listBox.SelectedIndex = index;
+            var item = listBox.Items[index];
+            listBox.ScrollIntoView(item);
+            listBox.UpdateLayout();
+
+            var container = (listBox.ItemContainerGenerator.ContainerFromIndex(index)
+                ?? listBox.ItemContainerGenerator.ContainerFromItem(item)) as ListBoxItem;
+            if (container != null)
+            {
+                container.Focus();
+                Keyboard.Focus(container);
+            }
+            else
+            {
+                _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+                {
+                    listBox.UpdateLayout();
+                    var c = (listBox.ItemContainerGenerator.ContainerFromIndex(index)
+                        ?? listBox.ItemContainerGenerator.ContainerFromItem(item)) as ListBoxItem;
+                    if (c != null)
+                    {
+                        c.Focus();
+                        Keyboard.Focus(c);
+                    }
+                    else
+                    {
+                        listBox.Focus();
+                    }
+                }));
+            }
+        }
 
         #endregion
 

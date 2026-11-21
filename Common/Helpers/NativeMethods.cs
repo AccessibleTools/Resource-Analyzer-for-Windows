@@ -1341,9 +1341,13 @@ namespace ResourceAnalyzer.Helpers
             int GetMasterVolumeLevel(out float pfLevelDB);
             [PreserveSig]
             int GetMasterVolumeLevelScalar(out float pfLevel);
-            int SetMute(bool bMute, ref Guid pguidEventContext);
+            int SetChannelVolumeLevel(uint nChannel, float fLevelDB, ref Guid pguidEventContext);
+            int SetChannelVolumeLevelScalar(uint nChannel, float fLevel, ref Guid pguidEventContext);
+            int GetChannelVolumeLevel(uint nChannel, out float pfLevelDB);
+            int GetChannelVolumeLevelScalar(uint nChannel, out float pfLevel);
+            int SetMute([MarshalAs(UnmanagedType.Bool)] bool bMute, ref Guid pguidEventContext);
             [PreserveSig]
-            int GetMute(out bool pbMute);
+            int GetMute([MarshalAs(UnmanagedType.Bool)] out bool pbMute);
             int GetVolumeStepInfo(out uint pnStep, out uint pnStepCount);
             int VolumeStepUp(ref Guid pguidEventContext);
             int VolumeStepDown(ref Guid pguidEventContext);

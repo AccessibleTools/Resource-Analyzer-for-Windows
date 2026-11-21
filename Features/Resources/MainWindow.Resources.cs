@@ -140,6 +140,11 @@ namespace ResourceAnalyzer
 
         private void LstResources_KeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleListCtrlHomeEnd(lstResources, e, _resourceItems.Count))
+            {
+                return;
+            }
+
             if (e.Key == Key.Enter)
             {
                 e.Handled = true;

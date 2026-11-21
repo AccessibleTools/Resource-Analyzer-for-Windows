@@ -44,9 +44,12 @@ namespace ResourceAnalyzer
                     _dataUsageMap[a.AppName] = a;
                 }
 
-                if (_dataUsageItems.Count > 0 && lstDataUsage.SelectedIndex < 0)
+                if (_dataUsageItems.Count > 0)
                 {
-                    lstDataUsage.SelectedIndex = 0;
+                    if (!string.IsNullOrWhiteSpace(search) || lstDataUsage.SelectedIndex < 0)
+                    {
+                        lstDataUsage.SelectedIndex = 0;
+                    }
                 }
 
                 if (announce)
@@ -127,13 +130,16 @@ namespace ResourceAnalyzer
 
         private void TxtDataSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down)
+            if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                lstDataUsage.Focus();
-                if (_dataUsageItems.Count > 0 && lstDataUsage.SelectedIndex < 0)
+                if (_dataUsageItems.Count > 0)
                 {
-                    lstDataUsage.SelectedIndex = 0;
+                    SelectAndFocusIndex(lstDataUsage, lstDataUsage.SelectedIndex >= 0 ? lstDataUsage.SelectedIndex : 0);
+                }
+                else
+                {
+                    lstDataUsage.Focus();
                 }
             }
             else if (e.Key == Key.Escape)
@@ -158,10 +164,20 @@ namespace ResourceAnalyzer
 
         private void LstDataUsage_KeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleListCtrlHomeEnd(lstDataUsage, e, _dataUsageItems.Count))
+            {
+                return;
+            }
+
             if (e.Key == Key.F5)
             {
                 e.Handled = true;
                 _ = RefreshDataUsageAsync(announce: true);
+            }
+            else if (e.Key == Key.C && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                e.Handled = true;
+                CtxDataUsageCopyDetails_Click(sender, e);
             }
         }
 

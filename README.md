@@ -16,7 +16,7 @@ Download the latest installer from [GitHub Releases](https://github.com/Accessib
 winget install AccessibleTools.ResourceAnalyzer
 ```
 
-Run `ResourceAnalyzer_Setup_v2.0.0.exe`. Press `Tab` to choose options (desktop shortcut, start with Windows, check or uncheck for daily update, Review privacy policy), then press Install and Finish.
+Run `ResourceAnalyzer_Setup_v2.0.4.exe`. Press `Tab` to choose options (desktop shortcut, start with Windows, check or uncheck for daily update, Review privacy policy), then press Install and Finish.
 
 ## How to use it
 

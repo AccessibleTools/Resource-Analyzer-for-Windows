@@ -188,7 +188,7 @@ namespace ResourceAnalyzer
                 }
                 else
                 {
-                    string prevSelectedKey = (lstProcesses.SelectedItem as ProcessItem)?.ItemKey ?? string.Empty;
+                    string prevSelectedKey = preferredIndex >= 0 ? string.Empty : ((lstProcesses.SelectedItem as ProcessItem)?.ItemKey ?? string.Empty);
                     int prevSelectedIndex = preferredIndex >= 0 ? preferredIndex : lstProcesses.SelectedIndex;
                     bool hadFocus = lstProcesses.IsKeyboardFocusWithin;
                     var freshMap = new Dictionary<string, ProcessItem>(StringComparer.OrdinalIgnoreCase);
@@ -705,6 +705,11 @@ namespace ResourceAnalyzer
 
         private async void LstProcesses_KeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleListCtrlHomeEnd(lstProcesses, e, _processItems.Count))
+            {
+                return;
+            }
+
             if (e.Key == Key.Delete)
             {
                 e.Handled = true;
@@ -965,6 +970,11 @@ namespace ResourceAnalyzer
 
         private async void LstFrozenApps_KeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleListCtrlHomeEnd(lstFrozenApps, e, _frozenItems.Count))
+            {
+                return;
+            }
+
             if (e.Key == Key.Delete || e.Key == Key.Enter)
             {
                 e.Handled = true;
@@ -1003,9 +1013,25 @@ namespace ResourceAnalyzer
             }
         }
 
-        private void SetSort(string sortBy)
+        private void SetSort(string sortBy, bool updateComboBox = true)
         {
             _currentSort = sortBy;
+            if (updateComboBox && cmbSortBy != null)
+            {
+                int targetIdx = sortBy switch
+                {
+                    "CPU" => 1,
+                    "Name" => 2,
+                    _ => 0
+                };
+                if (cmbSortBy.SelectedIndex != targetIdx)
+                {
+                    _isUpdatingUI = true;
+                    try { cmbSortBy.SelectedIndex = targetIdx; }
+                    finally { _isUpdatingUI = false; }
+                }
+            }
+
             tabProcesses.IsSelected = true;
             _ = RefreshProcessesAsync(isFullReset: true);
             _speechService.Speak($"Sorted by {sortBy}.", interrupt: true);
@@ -1018,23 +1044,42 @@ namespace ResourceAnalyzer
             }
         }
 
+        private void CmbSortBy_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isUpdatingUI || cmbSortBy == null || cmbSortBy.SelectedIndex < 0) return;
+            string sortBy = cmbSortBy.SelectedIndex switch
+            {
+                0 => "Memory",
+                1 => "CPU",
+                2 => "Name",
+                _ => "Memory"
+            };
+            if (!string.Equals(_currentSort, sortBy, StringComparison.OrdinalIgnoreCase))
+            {
+                SetSort(sortBy, updateComboBox: false);
+            }
+        }
+
         private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (tabProcesses.IsSelected)
             {
-                _ = RefreshProcessesAsync(isFullReset: true);
+                _ = RefreshProcessesAsync(isFullReset: true, preferredIndex: 0);
             }
         }
 
         private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down)
+            if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                lstProcesses.Focus();
-                if (_processItems.Count > 0 && lstProcesses.SelectedIndex < 0)
+                if (_processItems.Count > 0)
                 {
-                    lstProcesses.SelectedIndex = 0;
+                    SelectAndFocusIndex(lstProcesses, lstProcesses.SelectedIndex >= 0 ? lstProcesses.SelectedIndex : 0);
+                }
+                else
+                {
+                    lstProcesses.Focus();
                 }
             }
             else if (e.Key == Key.Escape)
@@ -1045,9 +1090,6 @@ namespace ResourceAnalyzer
             }
         }
 
-        private void BtnSortMem_Click(object sender, RoutedEventArgs e) => SetSort("Memory");
-        private void BtnSortCpu_Click(object sender, RoutedEventArgs e) => SetSort("CPU");
-        private void BtnSortName_Click(object sender, RoutedEventArgs e) => SetSort("Name");
         private void BtnToggleGroup_Click(object sender, RoutedEventArgs e) => ToggleProcessGrouping();
 
         private void ToggleProcessGrouping()

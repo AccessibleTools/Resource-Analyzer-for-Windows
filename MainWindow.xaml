@@ -378,36 +378,32 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Search Filter & Sort Header -->
-                    <Grid Grid.Row="0" Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <!-- Controls Bar -->
+                    <WrapPanel Grid.Row="0" Margin="0,0,0,8" VerticalAlignment="Center">
+                        <!-- Sort by Dropdown -->
+                        <TextBlock Text="Sort by: " VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0"/>
+                        <ComboBox x:Name="cmbSortBy" Width="160" Height="28" Margin="0,0,12,0"
+                                  SelectionChanged="CmbSortBy_SelectionChanged"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource InputForegroundBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
+                                  AutomationProperties.Name="Sort processes by">
+                            <ComboBoxItem Content="Memory (Ctrl+M)"/>
+                            <ComboBoxItem Content="CPU (Ctrl+P)"/>
+                            <ComboBoxItem Content="Name (Ctrl+N)"/>
+                        </ComboBox>
 
-                        <TextBlock Text="Filter (Ctrl+F): " VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,8,0"/>
-                        <TextBox x:Name="txtSearch" Grid.Column="1" Height="28" Padding="6,2"
+                        <!-- Group Toggle Button -->
+                        <Button x:Name="btnToggleGroup" Content="Group (Ctrl+G)" Height="28" Padding="10,2" Margin="0,0,16,0"
+                                Background="{DynamicResource SurfaceBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}" Click="BtnToggleGroup_Click"
+                                AutomationProperties.Name="Toggle Grouping of Multi-Instance Applications (Ctrl+G)"/>
+
+                        <!-- Process Search Filter -->
+                        <TextBlock Text="Filter (Ctrl+F): " VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0"/>
+                        <TextBox x:Name="txtSearch" Width="180" Height="28" Padding="6,2"
                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource InputForegroundBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
                                  TextChanged="TxtSearch_TextChanged"
                                  KeyDown="TxtSearch_KeyDown"
-                                 AutomationProperties.Name="Search and Filter Processes. Type to filter, Press Down Arrow to enter process list, Escape to clear."/>
-
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
-                            <Button x:Name="btnSortMem" Content="Sort RAM (Ctrl+M)" Height="28" Padding="8,2" Margin="0,0,4,0"
-                                    Background="{DynamicResource SurfaceBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}" Click="BtnSortMem_Click"
-                                    AutomationProperties.Name="Sort by Memory Usage"/>
-                            <Button x:Name="btnSortCpu" Content="Sort CPU (Ctrl+P)" Height="28" Padding="8,2" Margin="0,0,4,0"
-                                    Background="{DynamicResource SurfaceBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}" Click="BtnSortCpu_Click"
-                                    AutomationProperties.Name="Sort by CPU Usage"/>
-                            <Button x:Name="btnSortName" Content="Sort Name (Ctrl+N)" Height="28" Padding="8,2" Margin="0,0,4,0"
-                                    Background="{DynamicResource SurfaceBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}" Click="BtnSortName_Click"
-                                    AutomationProperties.Name="Sort by Process Name Alphabetically"/>
-                            <Button x:Name="btnToggleGroup" Content="Group (Ctrl+G)" Height="28" Padding="8,2"
-                                    Background="{DynamicResource SurfaceBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}" Click="BtnToggleGroup_Click"
-                                    AutomationProperties.Name="Toggle Grouping of Multi-Instance Applications (Ctrl+G)"/>
-                        </StackPanel>
-                    </Grid>
+                                 AutomationProperties.Name="Filter processes (Ctrl+F)"/>
+                    </WrapPanel>
 
                     <TextBlock x:Name="txtProcessCount" Grid.Row="1" Margin="0,0,0,6" Foreground="{DynamicResource AccentBrush}" FontSize="12"
                                Text="Loading processes... Press Delete to end selected task."
@@ -518,12 +514,12 @@
                         </ComboBox>
 
                         <!-- App Search Filter -->
-                        <TextBlock Text="Filter: " VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0"/>
+                        <TextBlock Text="Filter (Ctrl+F): " VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0"/>
                         <TextBox x:Name="txtDataSearch" Width="140" Height="28" Padding="6,2"
                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource InputForegroundBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
                                  TextChanged="TxtDataSearch_TextChanged"
                                  KeyDown="TxtDataSearch_KeyDown"
-                                 AutomationProperties.Name="Search Data Usage by Application Name. Type to filter, Press Down Arrow to enter list, Escape to clear."/>
+                                 AutomationProperties.Name="Filter data usage (Ctrl+F)"/>
                     </WrapPanel>
 
                     <!-- Summary line -->
