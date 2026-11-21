@@ -13,6 +13,6 @@ AppsAndFeaturesEntries:
 Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/AccessibleTools/Resource-Analyzer-for-Windows/releases/download/v2.0.4/ResourceAnalyzer_Setup_v2.0.4.exe
-    InstallerSha256: EE20195BC929556F63370D9B2DC66758A9ACA9F798858EA8C5F3E978D96787F8
+    InstallerSha256: D3080728DBE3177BBB7100D6703750897811DF79A970E7D140DBE1A47427131E
 ManifestType: installer
 ManifestVersion: 1.28.0
