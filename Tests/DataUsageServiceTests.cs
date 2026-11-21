@@ -123,6 +123,49 @@ namespace ResourceAnalyzer.Tests
         }
 
         [Fact]
+        public void AppDataUsageItem_WithDescription_FormatsDisplayNameAndDisplayTextLikeProcessList()
+        {
+            bool originalShowExt = ProcessItem.ShowExtension;
+            try
+            {
+                ProcessItem.ShowExtension = true;
+                var item = new AppDataUsageItem
+                {
+                    AppName = "msedge",
+                    Description = "Microsoft Edge",
+                    BytesReceived = 1048576,
+                    BytesSent = 524288
+                };
+
+                Assert.Equal("Microsoft Edge (msedge.exe)", item.DisplayName);
+                Assert.Contains("Microsoft Edge (msedge.exe) - Total: 1.5 MB", item.DisplayText);
+
+                // When extensions are turned off in settings
+                ProcessItem.ShowExtension = false;
+                item.UpdateDisplayText();
+                Assert.Equal("Microsoft Edge (msedge)", item.DisplayName);
+                Assert.Contains("Microsoft Edge (msedge) - Total: 1.5 MB", item.DisplayText);
+            }
+            finally
+            {
+                ProcessItem.ShowExtension = originalShowExt;
+            }
+        }
+
+        [Fact]
+        public void ProcessService_TryResolveFilePath_HandlesNormalAndMissingPaths()
+        {
+            Assert.Null(ProcessService.TryResolveFilePath(null!));
+            Assert.Null(ProcessService.TryResolveFilePath(""));
+            Assert.Null(ProcessService.TryResolveFilePath(@"Z:\FakePath\FakeApp.exe"));
+
+            // Real file check
+            string sysDir = Environment.SystemDirectory;
+            string cmdPath = System.IO.Path.Combine(sysDir, "cmd.exe");
+            Assert.Equal(cmdPath, ProcessService.TryResolveFilePath(cmdPath));
+        }
+
+        [Fact]
         public async Task DataUsageService_GetDataUsageAsync_SearchFilter_AppliesCorrectly()
         {
             var service = new DataUsageService();

@@ -230,6 +230,11 @@ namespace ResourceAnalyzer
                 item.UpdateDisplayText();
             }
 
+            foreach (var item in _dataUsageItems)
+            {
+                item.UpdateDisplayText();
+            }
+
             SaveSettingsFromUI(silent: true);
         }
 
@@ -403,6 +408,11 @@ namespace ResourceAnalyzer
             }
             ApplySettingsToRuntime();
             foreach (var item in _processItems)
+            {
+                item.UpdateDisplayText();
+            }
+
+            foreach (var item in _dataUsageItems)
             {
                 item.UpdateDisplayText();
             }

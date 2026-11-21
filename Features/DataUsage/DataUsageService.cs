@@ -188,9 +188,11 @@ namespace ResourceAnalyzer.Services
                 {
                     long total = kvp.Value.In + kvp.Value.Out;
                     double pct = grandTotal > 0 ? (double)total * 100.0 / grandTotal : 0;
+                    string desc = ProcessService.GetProcessDescription(0, kvp.Key, kvp.Value.Raw);
                     return new AppDataUsageItem
                     {
                         AppName = kvp.Key,
+                        Description = desc,
                         RawIdentifier = kvp.Value.Raw,
                         BytesReceived = kvp.Value.In,
                         BytesSent = kvp.Value.Out,
@@ -202,7 +204,10 @@ namespace ResourceAnalyzer.Services
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string term = searchTerm.Trim();
-                    list = list.Where(a => a.AppName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+                    list = list.Where(a =>
+                        a.AppName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrWhiteSpace(a.Description) && a.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                        a.DisplayName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
 
                 // Sort by TotalBytes descending

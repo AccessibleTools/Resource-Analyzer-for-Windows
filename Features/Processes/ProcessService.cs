@@ -19,7 +19,7 @@ namespace ResourceAnalyzer.Services
         string? GetProcessExecutablePath(int pid);
         HashSet<int> GetHungPids();
         int GetActiveForegroundPid();
-        string GetProcessDescription(int pid, string processName);
+        string GetProcessDescription(int pid, string processName, string? explicitPath = null);
     }
 
     public class ProcessService : IProcessService
@@ -250,54 +250,155 @@ namespace ResourceAnalyzer.Services
             ["epicgameslauncher"] = "Epic Games Launcher"
         };
 
-        public static string GetProcessDescription(int pid, string processName)
+        public static string? TryResolveFilePath(string rawPath)
         {
-            if (_descriptionCache.TryGetValue(processName, out var cached))
+            if (string.IsNullOrWhiteSpace(rawPath)) return null;
+            string path = rawPath.Trim();
+            if (System.IO.File.Exists(path)) return path;
+
+            // Handle NT device paths like \device\harddiskvolume3\Program Files\...
+            if (path.StartsWith(@"\device\", StringComparison.OrdinalIgnoreCase))
+            {
+                int thirdSlash = path.IndexOf('\\', 8);
+                if (thirdSlash >= 0)
+                {
+                    string relative = path.Substring(thirdSlash + 1);
+                    foreach (var drive in System.IO.DriveInfo.GetDrives())
+                    {
+                        try
+                        {
+                            string candidate = System.IO.Path.Combine(drive.Name, relative);
+                            if (System.IO.File.Exists(candidate))
+                            {
+                                return candidate;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static string GetProcessDescription(int pid, string processName, string? explicitPath = null)
+        {
+            string cleanName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                ? processName[..^4]
+                : processName;
+
+            if (_descriptionCache.TryGetValue(cleanName, out var cached) ||
+                _descriptionCache.TryGetValue(processName, out cached))
             {
                 return cached;
             }
 
-            try
+            // 1. Try explicit path if provided (e.g. from Data Usage AttributionId)
+            if (!string.IsNullOrWhiteSpace(explicitPath))
             {
-                using var proc = Process.GetProcessById(pid);
-                string? path = proc.MainModule?.FileName;
-                if (!string.IsNullOrEmpty(path))
+                string? resolved = TryResolveFilePath(explicitPath);
+                if (!string.IsNullOrEmpty(resolved) && System.IO.File.Exists(resolved))
                 {
-                    var fvi = FileVersionInfo.GetVersionInfo(path);
-                    if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                    try
                     {
-                        string desc = fvi.FileDescription.Trim();
-                        _descriptionCache[processName] = desc;
-                        return desc;
-                    }
-                }
-            }
-            catch
-            {
-                // Access denied on live process handle in Session 0.
-                // Fall back to reading the file directly from System32 on disk for standard users (Fix 7)
-                try
-                {
-                    string exeName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-                        ? processName
-                        : $"{processName}.exe";
-                    string sysPath = System.IO.Path.Combine(Environment.SystemDirectory, exeName);
-                    if (System.IO.File.Exists(sysPath))
-                    {
-                        var fvi = FileVersionInfo.GetVersionInfo(sysPath);
+                        var fvi = FileVersionInfo.GetVersionInfo(resolved);
                         if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
                         {
                             string desc = fvi.FileDescription.Trim();
-                            _descriptionCache[processName] = desc;
+                            _descriptionCache[cleanName] = desc;
+                            return desc;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // 2. Try live process handle if pid > 0
+            if (pid > 0)
+            {
+                try
+                {
+                    using var proc = Process.GetProcessById(pid);
+                    string? path = proc.MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                    {
+                        var fvi = FileVersionInfo.GetVersionInfo(path);
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                        {
+                            string desc = fvi.FileDescription.Trim();
+                            _descriptionCache[cleanName] = desc;
                             return desc;
                         }
                     }
                 }
                 catch { }
             }
+            else
+            {
+                // If pid <= 0 (e.g. Data Usage query), check if process is currently running to grab its path
+                try
+                {
+                    var liveProcs = Process.GetProcessesByName(cleanName);
+                    foreach (var lp in liveProcs)
+                    {
+                        try
+                        {
+                            string? p = lp.MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(p) && System.IO.File.Exists(p))
+                            {
+                                var fvi = FileVersionInfo.GetVersionInfo(p);
+                                if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                                {
+                                    string desc = fvi.FileDescription.Trim();
+                                    _descriptionCache[cleanName] = desc;
+                                    return desc;
+                                }
+                            }
+                        }
+                        catch { }
+                        finally
+                        {
+                            lp.Dispose();
+                        }
+                    }
+                }
+                catch { }
+            }
 
-            _descriptionCache[processName] = processName;
-            return processName;
+            // 3. Fall back to reading the file directly from System32 or Windows root on disk
+            try
+            {
+                string exeName = $"{cleanName}.exe";
+                string sysPath = System.IO.Path.Combine(Environment.SystemDirectory, exeName);
+                if (System.IO.File.Exists(sysPath))
+                {
+                    var fvi = FileVersionInfo.GetVersionInfo(sysPath);
+                    if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                    {
+                        string desc = fvi.FileDescription.Trim();
+                        _descriptionCache[cleanName] = desc;
+                        return desc;
+                    }
+                }
+                else
+                {
+                    string winPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), exeName);
+                    if (System.IO.File.Exists(winPath))
+                    {
+                        var fvi = FileVersionInfo.GetVersionInfo(winPath);
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                        {
+                            string desc = fvi.FileDescription.Trim();
+                            _descriptionCache[cleanName] = desc;
+                            return desc;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            _descriptionCache[cleanName] = cleanName;
+            return cleanName;
         }
 
         public bool CanTerminateProcess(int pid, string processName, string? subProcessDetail, out string reason)
@@ -394,7 +495,7 @@ namespace ResourceAnalyzer.Services
 
         HashSet<int> IProcessService.GetHungPids() => GetHungPids();
         int IProcessService.GetActiveForegroundPid() => GetActiveForegroundPid();
-        string IProcessService.GetProcessDescription(int pid, string processName) => GetProcessDescription(pid, processName);
+        string IProcessService.GetProcessDescription(int pid, string processName, string? explicitPath) => GetProcessDescription(pid, processName, explicitPath);
 
         public async Task<List<ProcessItem>> GetProcessesAsync(string searchTerm, string sortBy)
         {

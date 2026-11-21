@@ -150,8 +150,8 @@ namespace ResourceAnalyzer
             {
                 if (SafeClipboard.TrySetText(dataItem.DisplayText))
                 {
-                    _speechService.Speak($"Copied {dataItem.AppName} data usage to clipboard.", interrupt: true);
-                    txtAnnouncement.Text = $"Copied {dataItem.AppName} data usage to clipboard.";
+                    _speechService.Speak($"Copied {dataItem.DisplayName} data usage to clipboard.", interrupt: true);
+                    txtAnnouncement.Text = $"Copied {dataItem.DisplayName} data usage to clipboard.";
                 }
             }
         }

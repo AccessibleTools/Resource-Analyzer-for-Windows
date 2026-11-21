@@ -12,6 +12,7 @@ namespace ResourceAnalyzer.Models
         private long _bytesSent;
         private double _usagePercent;
         private string _appName = string.Empty;
+        private string _description = string.Empty;
         private string _rawIdentifier = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -25,8 +26,44 @@ namespace ResourceAnalyzer.Models
                 {
                     _appName = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayName));
                     OnPropertyChanged(nameof(DisplayText));
                 }
+            }
+        }
+
+        public string Description
+        {
+            get => _description;
+            set
+            {
+                if (_description != value)
+                {
+                    _description = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayName));
+                    OnPropertyChanged(nameof(DisplayText));
+                }
+            }
+        }
+
+        public string DisplayName
+        {
+            get
+            {
+                string cleanName = AppName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    ? AppName[..^4]
+                    : AppName;
+
+                string exeName = ProcessItem.ShowExtension ? $"{cleanName}.exe" : cleanName;
+
+                if (!string.IsNullOrWhiteSpace(_description) &&
+                    !_description.Equals(cleanName, StringComparison.OrdinalIgnoreCase) &&
+                    !_description.Equals(exeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return $"{_description} ({exeName})";
+                }
+                return exeName;
             }
         }
 
@@ -99,7 +136,13 @@ namespace ResourceAnalyzer.Models
         public string SentFormatted => FormatHelper.FormatBytes(_bytesSent);
         public string TotalFormatted => FormatHelper.FormatBytes(TotalBytes);
 
-        public string DisplayText => $"{AppName} - Total: {TotalFormatted} (Down: {ReceivedFormatted}, Up: {SentFormatted})";
+        public string DisplayText => $"{DisplayName} - Total: {TotalFormatted} (Down: {ReceivedFormatted}, Up: {SentFormatted})";
+
+        public void UpdateDisplayText()
+        {
+            OnPropertyChanged(nameof(DisplayName));
+            OnPropertyChanged(nameof(DisplayText));
+        }
 
         public override string ToString() => DisplayText;
 

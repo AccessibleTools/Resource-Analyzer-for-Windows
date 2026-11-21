@@ -267,7 +267,8 @@ namespace ResourceAnalyzer
                             {
                                 lstProcesses.SelectedItem = match;
                             }
-                            if (hadFocus || lstProcesses.IsKeyboardFocusWithin)
+                            bool isSearchFocused = txtSearch.IsKeyboardFocusWithin || txtSearch.IsFocused;
+                            if (!isSearchFocused && (hadFocus || lstProcesses.IsKeyboardFocusWithin))
                             {
                                 var container = lstProcesses.ItemContainerGenerator.ContainerFromItem(match) as ListBoxItem;
                                 container?.Focus();
@@ -284,24 +285,28 @@ namespace ResourceAnalyzer
                         lstProcesses.SelectedIndex = targetIdx;
                         lstProcesses.ScrollIntoView(targetItem);
 
-                        _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                        bool isSearchFocused = txtSearch.IsKeyboardFocusWithin || txtSearch.IsFocused;
+                        if (!isSearchFocused && (hadFocus || lstProcesses.IsKeyboardFocusWithin))
                         {
-                            if (tabProcesses.IsSelected)
+                            _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
                             {
-                                lstProcesses.UpdateLayout();
-                                var container = (lstProcesses.ItemContainerGenerator.ContainerFromItem(targetItem)
-                                    ?? lstProcesses.ItemContainerGenerator.ContainerFromIndex(targetIdx)) as ListBoxItem;
-                                if (container != null)
+                                if (tabProcesses.IsSelected && !txtSearch.IsKeyboardFocusWithin && !txtSearch.IsFocused)
                                 {
-                                    container.Focus();
-                                    Keyboard.Focus(container);
+                                    lstProcesses.UpdateLayout();
+                                    var container = (lstProcesses.ItemContainerGenerator.ContainerFromItem(targetItem)
+                                        ?? lstProcesses.ItemContainerGenerator.ContainerFromIndex(targetIdx)) as ListBoxItem;
+                                    if (container != null)
+                                    {
+                                        container.Focus();
+                                        Keyboard.Focus(container);
+                                    }
+                                    else
+                                    {
+                                        Keyboard.Focus(lstProcesses);
+                                    }
                                 }
-                                else
-                                {
-                                    Keyboard.Focus(lstProcesses);
-                                }
-                            }
-                        }));
+                            }));
+                        }
                     }
                     else if (_processItems.Count > 0 && lstProcesses.SelectedIndex < 0)
                     {
